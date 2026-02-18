@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecureForm Pro · Adaptive Captcha</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+       
+        .recaptcha-box {
+            width: 24px; height: 24px; border: 2px solid #c1c1c1; border-radius: 2px; background-color: #fff;
+            position: relative; cursor: pointer; transition: all 0.2s;
+        }
+        .recaptcha-box:hover { border-color: #b2b2b2; }
+       
+        .recaptcha-spinner {
+            border: 2px solid #f3f3f3; border-top: 2px solid #3498db; border-radius: 50%;
+            width: 18px; height: 18px; animation: spin 1s linear infinite; position: absolute; top: 1px; left: 1px; display: none;
+        }
+
+        .recaptcha-checkmark {
+            color: #0F9D58; font-size: 26px; position: absolute; top: -6px; left: -1px;
+            display: none; font-weight: bold; transform: scale(0); transition: transform 0.2s ease-in-out;
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .img-grid-cell {
+            position: relative; cursor: pointer; transition: transform 0.1s;
+        }
+        .img-grid-cell:active { transform: scale(0.98); }
+        .img-grid-cell.selected::after {
+            content: '✓'; position: absolute; top: 5px; right: 5px; background: #2563eb; color: white;
+            width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .img-grid-cell.selected { box-shadow: inset 0 0 0 4px #2563eb; }
+
+        .shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 min-h-screen flex items-center justify-center p-4">
+
+    <div class="max-w-5xl w-full bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col md:flex-row">
+       
+        <!-- Left Panel unchanged -->
+        <div class="w-full md:w-2/5 bg-slate-900 text-white p-8 md:p-12 flex flex-col justify-between relative overflow-hidden">
+            <div class="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-blue-600 opacity-20 blur-3xl"></div>
+            <div class="absolute bottom-0 left-0 -ml-16 -mb-16 w-64 h-64 rounded-full bg-indigo-600 opacity-20 blur-3xl"></div>
+           
+            <div class="relative z-10">
+                <div class="flex items-center space-x-2 mb-8">
+                    <div class="bg-blue-500 p-2 rounded-lg"><i data-lucide="shield-check" class="w-6 h-6 text-white"></i></div>
+                    <span class="text-xl font-bold tracking-tight">SecureForm Pro</span>
+                </div>
+               
+                <h1 class="text-3xl md:text-4xl font-bold mb-6 leading-tight">Protecting your data, humanly.</h1>
+                <p class="text-slate-300 mb-8 text-lg font-light">Experience our multi‑layer spam protection – now with dynamic image challenges.</p>
+
+                <div class="space-y-4">
+                    <div class="flex items-start space-x-3"><i data-lucide="check-circle-2" class="w-5 h-5 text-blue-400 mt-1"></i><p class="text-sm text-slate-300">Intelligent object selection (cats, dogs, birds, fish).</p></div>
+                    <div class="flex items-start space-x-3"><i data-lucide="check-circle-2" class="w-5 h-5 text-blue-400 mt-1"></i><p class="text-sm text-slate-300">Accessibility‑first audio challenges.</p></div>
+                    <div class="flex items-start space-x-3"><i data-lucide="check-circle-2" class="w-5 h-5 text-blue-400 mt-1"></i><p class="text-sm text-slate-300">One‑click reset on every captcha.</p></div>
+                </div>
+            </div>
+            <div class="mt-12 text-xs text-slate-500 relative z-10">&copy; 2026 SecureForm Inc. All rights reserved.</div>
+        </div>
+
+        <!-- Right Panel: Form with reset buttons -->
+        <div class="w-full md:w-3/5 p-8 md:p-12 bg-white relative">
+           
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">Get in touch</h2>
+           
+            <form id="contactForm" class="space-y-6" onsubmit="return false;">
+               
+                <!-- Input fields unchanged -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div><label class="block text-sm font-medium text-gray-700 mb-1">First Name</label><input type="text" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" placeholder="Vedansh" required></div>
+                    <div><label class="block text-sm font-medium text-gray-700 mb-1">Last Name</label><input type="text" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" placeholder="Pandey" required></div>
+                </div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">Email Address</label><input type="email" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" placeholder="vedansh@example.com" required></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">Message</label><textarea rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" placeholder="How can we help you?" required></textarea></div>
+
+                <!-- CAPTCHA Section with Reset inside each module -->
+                <div class="pt-4 border-t border-gray-100">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wider">Security Check</h3>
+                       
+                        <!-- Captcha Type Selector -->
+                        <div class="flex bg-gray-100 rounded-lg p-1">
+                            <button type="button" onclick="setCaptcha('text')" class="captcha-tab px-3 py-1 rounded-md text-xs font-medium transition-all" id="tab-text">Text</button>
+                            <button type="button" onclick="setCaptcha('image')" class="captcha-tab px-3 py-1 rounded-md text-xs font-medium transition-all text-gray-500 hover:text-gray-900" id="tab-image">Image</button>
+                            <button type="button" onclick="setCaptcha('audio')" class="captcha-tab px-3 py-1 rounded-md text-xs font-medium transition-all text-gray-500 hover:text-gray-900" id="tab-audio">Audio</button>
+                            <button type="button" onclick="setCaptcha('recaptcha')" class="captcha-tab px-3 py-1 rounded-md text-xs font-medium transition-all text-gray-500 hover:text-gray-900" id="tab-recaptcha">Bot</button>
+                        </div>
+                    </div>
+
+                    <div id="captcha-container" class="bg-gray-50 p-4 rounded-xl border border-gray-200 transition-all relative">
+                       
+                        <!-- 1. TEXT CAPTCHA + reset button -->
+                        <div id="captcha-text" class="captcha-module">
+                            <div class="flex items-center justify-between mb-2">
+                                <p class="text-xs text-gray-500">Type the characters you see below.</p>
+                                <button type="button" onclick="generateTextCaptcha()" class="text-gray-400 hover:text-blue-600 transition-colors flex items-center gap-1 text-xs bg-white px-2 py-1 rounded border shadow-sm">
+                                    <i data-lucide="refresh-cw" class="w-3 h-3"></i> reset
+                                </button>
+                            </div>
+                            <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                                <div class="relative cursor-pointer" onclick="generateTextCaptcha()">
+                                    <canvas id="textCanvas" width="200" height="60" class="rounded-lg border border-gray-300 bg-white shadow-sm"></canvas>
+                                    <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white/80 p-1 rounded"><i data-lucide="refresh-cw" class="w-4 h-4 text-gray-600"></i></div>
+                                </div>
+                                <div class="flex-1 w-full">
+                                    <input type="text" id="textCaptchaInput" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none uppercase tracking-widest font-mono" placeholder="ENTER CODE">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 2. IMAGE CAPTCHA (dynamic target + reset) -->
+                        <div id="captcha-image" class="captcha-module hidden">
+                            <div class="flex justify-between items-center mb-3">
+                                <div>
+                                    <p class="text-sm font-bold text-gray-800">Select all squares with <span id="imageTargetLabel" class="text-blue-600">Cats</span>.</p>
+                                    <p class="text-xs text-gray-500">Click verify when done.</p>
+                                </div>
+                                <button type="button" onclick="generateImageCaptcha()" class="text-gray-400 hover:text-blue-600 transition-colors flex items-center gap-1 text-xs bg-white px-2 py-1 rounded border shadow-sm">
+                                    <i data-lucide="refresh-cw" class="w-3 h-3"></i> reset
+                                </button>
+                            </div>
+                            <div id="imageGrid" class="grid grid-cols-3 gap-2 mb-3"></div>
+                            <input type="hidden" id="imageCaptchaValid" value="false">
+                        </div>
+
+                        <!-- 3. AUDIO CAPTCHA + reset -->
+                        <div id="captcha-audio" class="captcha-module hidden">
+                            <div class="flex justify-between items-center mb-2">
+                                <p class="text-xs text-gray-500">Listen to the sequence and type it below.</p>
+                                <button type="button" onclick="generateAudioSequence()" class="text-gray-400 hover:text-blue-600 transition-colors flex items-center gap-1 text-xs bg-white px-2 py-1 rounded border shadow-sm">
+                                    <i data-lucide="refresh-cw" class="w-3 h-3"></i> new code
+                                </button>
+                            </div>
+                            <div class="flex flex-col sm:flex-row gap-4 items-center">
+                                <button type="button" onclick="playAudioCaptcha()" class="w-full sm:w-auto h-12 px-6 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg flex items-center justify-center gap-2 transition-colors">
+                                    <i data-lucide="volume-2" class="w-5 h-5"></i><span class="font-medium">Play Audio</span>
+                                </button>
+                                <div class="flex-1 w-full">
+                                    <input type="text" id="audioCaptchaInput" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none uppercase tracking-widest font-mono" placeholder="TYPE SEQUENCE">
+                                </div>
+                            </div>
+                            <p class="text-[10px] text-gray-400 mt-2">*Uses Web Speech API.</p>
+                        </div>
+
+                        <!-- 4. RECAPTCHA MOCK + reset -->
+                        <div id="captcha-recaptcha" class="captcha-module hidden">
+                            <div class="flex justify-end mb-2">
+                                <button type="button" onclick="resetRecaptcha()" class="text-gray-400 hover:text-blue-600 transition-colors flex items-center gap-1 text-xs bg-white px-2 py-1 rounded border shadow-sm">
+                                    <i data-lucide="refresh-cw" class="w-3 h-3"></i> reset
+                                </button>
+                            </div>
+                            <div class="bg-white border border-gray-300 rounded shadow-sm w-fit pr-10 p-3 flex items-center gap-3 select-none">
+                                <div class="recaptcha-box flex items-center justify-center" onclick="toggleRecaptcha(this)">
+                                    <div class="recaptcha-spinner"></div>
+                                    <div class="recaptcha-checkmark">✓</div>
+                                </div>
+                                <div class="text-sm font-medium text-gray-600">I'm not a robot</div>
+                                <div class="flex flex-col items-center justify-center ml-4">
+                                    <img src="https://www.gstatic.com/recaptcha/api2/logo_48.png" alt="logo" class="w-6 opacity-60">
+                                    <span class="text-[9px] text-gray-400">reCAPTCHA</span>
+                                    <div class="text-[8px] text-gray-400"><a href="#" class="hover:underline">Privacy</a> - <a href="#" class="hover:underline">Terms</a></div>
+                                </div>
+                            </div>
+                            <input type="hidden" id="recaptchaVerified" value="false">
+                        </div>
+
+                    </div>
+                    <div id="error-msg" class="text-red-500 text-sm mt-2 hidden flex items-center gap-1">
+                        <i data-lucide="alert-circle" class="w-4 h-4"></i><span>Validation failed. Please try again.</span>
+                    </div>
+                </div>
+
+                <button type="button" onclick="submitForm()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2">
+                    <span>Send Message</span><i data-lucide="send" class="w-4 h-4"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-5 right-5 transform translate-y-20 opacity-0 transition-all duration-500 bg-green-600 text-white px-6 py-4 rounded-lg shadow-2xl flex items-center gap-3">
+        <i data-lucide="check-circle" class="w-6 h-6"></i>
+        <div><h4 class="font-bold">Message Sent!</h4><p class="text-sm text-green-100">Verification successful.</p></div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        // State
+        let currentMode = 'text';
+        let textSolution = '';
+        let audioSolution = '';
+        let correctImageIndices = [];
+        let selectedImageIndices = new Set();
+        let isRecaptchaVerified = false;
+        let imageTargetName = 'cat';   // current target for display
+
+        // --- Captcha switching ---
+        function setCaptcha(mode) {
+            currentMode = mode;
+           
+            document.querySelectorAll('.captcha-tab').forEach(el => {
+                el.classList.remove('bg-white', 'shadow-sm', 'text-blue-600');
+                el.classList.add('text-gray-500');
+            });
+            document.getElementById(`tab-${mode}`).classList.add('bg-white', 'shadow-sm', 'text-blue-600');
+            document.getElementById(`tab-${mode}`).classList.remove('text-gray-500');
+
+            document.querySelectorAll('.captcha-module').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`captcha-${mode}`).classList.remove('hidden');
+            document.getElementById('error-msg').classList.add('hidden');
+
+            if(mode === 'text') generateTextCaptcha();
+            if(mode === 'image') generateImageCaptcha();
+            if(mode === 'audio') generateAudioSequence();
+            if(mode === 'recaptcha') resetRecaptcha();
+        }
+
+        // --- Text Captcha ---
+        function generateTextCaptcha() {
+            const canvas = document.getElementById('textCanvas');
+            const ctx = canvas.getContext('2d');
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            let result = '';
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#f8fafc';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            for(let i=0; i<7; i++) {
+                ctx.beginPath();
+                ctx.moveTo(Math.random() * canvas.width, Math.random() * canvas.height);
+                ctx.lineTo(Math.random() * canvas.width, Math.random() * canvas.height);
+                ctx.strokeStyle = `rgba(100, 116, 139, ${Math.random()})`;
+                ctx.lineWidth = 1 + Math.random() * 2;
+                ctx.stroke();
+            }
+
+            ctx.font = '30px "Courier New", monospace';
+            ctx.textBaseline = 'middle';
+           
+            for (let i = 0; i < 6; i++) {
+                const char = chars[Math.floor(Math.random() * chars.length)];
+                result += char;
+                ctx.save();
+                const x = 25 + (i * 28);
+                const y = 30 + (Math.random() * 10 - 5);
+                const angle = (Math.random() * 0.4) - 0.2;
+                ctx.translate(x, y);
+                ctx.rotate(angle);
+                ctx.fillStyle = '#1e293b';
+                ctx.fillText(char, 0, 0);
+                ctx.restore();
+            }
+
+            for(let i=0; i<50; i++) {
+                ctx.beginPath();
+                ctx.arc(Math.random() * canvas.width, Math.random() * canvas.height, 1, 0, 2 * Math.PI);
+                ctx.fillStyle = '#94a3b8';
+                ctx.fill();
+            }
+
+            textSolution = result;
+            document.getElementById('textCaptchaInput').value = '';
+            lucide.createIcons();
+        }
+
+        // --- Image Captcha (dynamic target) ---
+        function generateImageCaptcha() {
+            const grid = document.getElementById('imageGrid');
+            grid.innerHTML = '';
+            selectedImageIndices.clear();
+            correctImageIndices = [];
+
+            // pool of possible targets (the challenge can be about any of these)
+            const targetPool = ['cat', 'dog', 'bird', 'fish', 'rabbit'];
+            // pick random target for this round
+            const target = targetPool[Math.floor(Math.random() * targetPool.length)];
+            imageTargetName = target;
+           
+            // update instruction label
+            const labelSpan = document.getElementById('imageTargetLabel');
+            if (labelSpan) {
+                let displayName = target.charAt(0).toUpperCase() + target.slice(1) + 's';
+                labelSpan.textContent = displayName;
+            }
+
+            // icons for non‑target filler – can be any except current target
+            const otherIcons = targetPool.filter(t => t !== target);
+            const fillerIcons = [...otherIcons, ...otherIcons, ...otherIcons]; // plenty to pick from
+
+            // color mapping
+            const colorMap = {
+                cat: 'text-orange-500', dog: 'text-amber-700', bird: 'text-green-500',
+                fish: 'text-blue-500', rabbit: 'text-pink-500'
+            };
+
+            // build 9 cells
+            for(let i=0; i<9; i++) {
+                // decide if this cell becomes the target (approx 30-40% chance but ensure at least 1)
+                let iconType;
+                if (i < 3 && correctImageIndices.length < 3) {  // ensure up to 3 targets
+                    iconType = target;
+                } else {
+                    // random from filler, but ensure we don't accidentally add target too many times
+                    if (Math.random() < 0.35 && correctImageIndices.length < 4) {
+                        iconType = target;   // maybe more than 3, but fine
+                    } else {
+                        iconType = fillerIcons[Math.floor(Math.random() * fillerIcons.length)];
+                    }
+                }
+
+                if (iconType === target) {
+                    correctImageIndices.push(i);
+                }
+
+                const cell = document.createElement('div');
+                cell.className = 'img-grid-cell h-20 bg-gray-100 rounded-lg flex items-center justify-center border-2 border-transparent hover:border-blue-200';
+                cell.dataset.index = i;
+                cell.innerHTML = `<i data-lucide="${iconType}" class="w-8 h-8 ${colorMap[iconType] || 'text-gray-500'}"></i>`;
+               
+                cell.onclick = () => toggleImageSelection(i, cell);
+                grid.appendChild(cell);
+            }
+
+            // If by chance no target was added (unlikely), force at least one
+            if (correctImageIndices.length === 0) {
+                correctImageIndices.push(0);
+                const firstCell = grid.children[0];
+                firstCell.innerHTML = `<i data-lucide="${target}" class="w-8 h-8 ${colorMap[target]}"></i>`;
+                firstCell.onclick = () => toggleImageSelection(0, firstCell);
+            }
+
+            lucide.createIcons();
+        }
+
+        function toggleImageSelection(index, el) {
+            if(selectedImageIndices.has(index)) {
+                selectedImageIndices.delete(index);
+                el.classList.remove('selected', 'border-blue-500');
+            } else {
+                selectedImageIndices.add(index);
+                el.classList.add('selected', 'border-blue-500');
+            }
+        }
+
+        // --- Audio Captcha ---
+        function generateAudioSequence() {
+            const chars = '0123456789';
+            let result = '';
+            for(let i=0; i<5; i++) result += chars[Math.floor(Math.random() * chars.length)];
+            audioSolution = result;
+            document.getElementById('audioCaptchaInput').value = '';
+        }
+
+        function playAudioCaptcha() {
+            if (!('speechSynthesis' in window)) { alert("Your browser doesn't support text-to-speech."); return; }
+            const textToRead = audioSolution.split('').join('. ');
+            const utterance = new SpeechSynthesisUtterance(textToRead);
+            utterance.rate = 0.8;
+            window.speechSynthesis.cancel();
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // --- reCAPTCHA mock ---
+        function toggleRecaptcha(el) {
+            if(isRecaptchaVerified) return;
+            const spinner = el.querySelector('.recaptcha-spinner');
+            const checkmark = el.querySelector('.recaptcha-checkmark');
+           
+            spinner.style.display = 'block';
+            setTimeout(() => {
+                spinner.style.display = 'none';
+                checkmark.style.display = 'block';
+                requestAnimationFrame(() => checkmark.style.transform = 'scale(1)');
+                isRecaptchaVerified = true;
+                el.style.borderColor = 'transparent';
+            }, 1500);
+        }
+
+        function resetRecaptcha() {
+            isRecaptchaVerified = false;
+            const box = document.querySelector('.recaptcha-box');
+            if(box) {
+                box.style.borderColor = '#c1c1c1';
+                box.querySelector('.recaptcha-spinner').style.display = 'none';
+                const check = box.querySelector('.recaptcha-checkmark');
+                check.style.display = 'none';
+                check.style.transform = 'scale(0)';
+            }
+            document.getElementById('recaptchaVerified').value = 'false';
+        }
+
+        // --- Submission & Validation ---
+        function submitForm() {
+            const errorEl = document.getElementById('error-msg');
+            let isValid = false;
+
+            const inputs = document.querySelectorAll('#contactForm input[required], #contactForm textarea[required]');
+            let fieldsFilled = true;
+            inputs.forEach(input => {
+                if(!input.value.trim()) {
+                    input.classList.add('border-red-500');
+                    fieldsFilled = false;
+                } else {
+                    input.classList.remove('border-red-500');
+                }
+            });
+
+            if(!fieldsFilled) {
+                errorEl.querySelector('span').textContent = 'Please fill out all fields.';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+
+            // Captcha validation
+            switch(currentMode) {
+                case 'text':
+                    isValid = (document.getElementById('textCaptchaInput').value.toUpperCase() === textSolution);
+                    break;
+                case 'image':
+                    const selectedArr = Array.from(selectedImageIndices).sort();
+                    const correctArr = correctImageIndices.sort();
+                    isValid = (JSON.stringify(selectedArr) === JSON.stringify(correctArr) && selectedArr.length > 0);
+                    break;
+                case 'audio':
+                    const userAudio = document.getElementById('audioCaptchaInput').value.replace(/\s/g, '');
+                    isValid = (userAudio === audioSolution);
+                    break;
+                case 'recaptcha':
+                    isValid = isRecaptchaVerified;
+                    break;
+            }
+
+            if(isValid) {
+                errorEl.classList.add('hidden');
+                const btn = document.querySelector('button[onclick="submitForm()"]');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = `<div class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> Sending...`;
+                btn.disabled = true;
+
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                    showToast();
+                    document.getElementById('contactForm').reset();
+                    // regenerate current captcha after reset
+                    if(currentMode === 'text') generateTextCaptcha();
+                    if(currentMode === 'image') generateImageCaptcha();
+                    if(currentMode === 'audio') generateAudioSequence();
+                    if(currentMode === 'recaptcha') resetRecaptcha();
+                }, 1500);
+
+            } else {
+                errorEl.querySelector('span').textContent = 'Verification failed. Please try again.';
+                errorEl.classList.remove('hidden');
+                document.getElementById('captcha-container').classList.remove('shake');
+                void document.getElementById('captcha-container').offsetWidth;
+                document.getElementById('captcha-container').classList.add('shake');
+            }
+        }
+
+        function showToast() {
+            const toast = document.getElementById('toast');
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 3000);
+        }
+
+        // Initialise
+        setCaptcha('text');
+    </script>
+</body>
+</html>
